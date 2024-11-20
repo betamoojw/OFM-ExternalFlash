@@ -3,47 +3,38 @@
 #include <FS.h>
 #include <OpenKNX.h>
 #include <SPI.h>
-#define LFS_NAME_MAX 255
 #include "../lib/littlefs/lfs.h"
 
-// SPI1 Konfiguration für den externen Flash (Pins für RP2040)
-#define W25Q128_SPI_PORT SPI1
-#define W25Q128_CS_PIN    13   // Chip Select Pin
-#define W25Q128_SCK_PIN   10  // Clock Pin
-#define W25Q128_MOSI_PIN  11 // MOSI Pin
-#define W25Q128_MISO_PIN  12 // MISO Pin
-#define W25Q128_WP_PIN    14 // Write Protect Pin
-#define W25Q128_HOLD_PIN  15 // Hold Pin
+// SPI Configuration fo the external Flash on the OPenKNX REG2 PiPico Board
+#define W25Q128_SPI_PORT SPI1 // SPI1 will be used.
+#define W25Q128_CS_PIN 13     // Chip Select Pin
+#define W25Q128_SCK_PIN 10    // Clock Pin
+#define W25Q128_MOSI_PIN 11   // MOSI Pin
+#define W25Q128_MISO_PIN 12   // MISO Pin
+#define W25Q128_WP_PIN 14     // Write Protect Pin
+#define W25Q128_HOLD_PIN 15   // Hold Pin
 
+// W25Q128 SPecific Commands (could be compatible with other W25Qxx Flash Chips)
+#define CMD_READ_ID 0x9F          // Read ID Command
+#define CMD_WRITE_ENABLE 0x06     // Write Enable Command
+#define CMD_WRITE_DISABLE 0x04    // Write Disable Command
+#define CMD_READ_DATA 0x03        // Read Data Command
+#define CMD_PAGE_PROGRAM 0x02     // Page Program Command
+#define CMD_SECTOR_ERASE 0x20     // Sector Erase Command
+#define CMD_CHIP_ERASE 0xC7       // Chip Erase Command
+#define CMD_READ_STATUS_REG 0x05  // Read Status Register Command
+#define CMD_WRITE_STATUS_REG 0x01 // Write Status Register Command
 
-// #define W25Q128_SPI_PORT SPI1
-// #define W25128_FLASH_CS 13 // Chip Select Pin
-// #define W25128_FLASH_SCK 10 // Clock Pin
-// #define W25128_FLASH_MOSI 11 // MOSI Pin
-// #define W25128_FLASH_MISO 12 // MISO Pin
-// #define W25128_FLASH_WP 14 // Write Protect Pin
-// #define W25128_FLASH_HOLD 15 // Hold Pin
-
-// W25Q128-Befehle
-#define CMD_READ_ID 0x9F
-#define CMD_WRITE_ENABLE 0x06
-#define CMD_WRITE_DISABLE 0x04
-#define CMD_READ_DATA 0x03
-#define CMD_PAGE_PROGRAM 0x02
-#define CMD_SECTOR_ERASE 0x20
-#define CMD_CHIP_ERASE 0xC7
-#define CMD_READ_STATUS_REG 0x05
-#define CMD_WRITE_STATUS_REG 0x01
-
-#define SECTOR_SIZE_W25Q128_4KB 4096          // 4KB
-#define PAGE_SIZE_W25Q128_256B 256            // 256 Bytes
+#define SECTOR_SIZE_W25Q128_4KB 4096          // The sector size of the W25Q128 Flash Chip is 4KB!
+#define PAGE_SIZE_W25Q128_256B 256            // Page size of the W25Q128 Flash Chip is 256 Bytes
 #define FLASH_SIZE_W25Q128 (16 * 1024 * 1024) // 16MB (128Mbit) --> 16 x 1024 x 1024 Bytes = 16777216 Bytes (Hex: 0x1000000)
 
+// Chip ID struct, to store the manufacturerID, memoryType and capacity
 struct ChipID
 {
-    uint8_t manufacturerID;
-    uint8_t memoryType;
-    uint8_t capacity;
+    uint8_t manufacturerID; // Manufacturer ID, should be 0xEF for Winbond
+    uint8_t memoryType;     // Memory Type, should be 0x40 for W25Q128
+    uint8_t capacity;       // Capacity, should be 0x18 for 16Mbit
 };
 
 class W25Q128
