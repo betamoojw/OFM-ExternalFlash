@@ -2,11 +2,19 @@
 
 ExternalFlash extFlashModule; // External flash module instance
 
+/**
+ * @brief Construct a new External Flash:: External Flash object
+ *
+ */
 ExternalFlash::ExternalFlash() : _extFlashLfs(FSImplPtr(nullptr)),
                                  _SpiFLashInitialized(false), _mounted(false)
 {
 }
 
+/**
+ * @brief Destroy the External Flash:: External Flash object
+ *
+ */
 ExternalFlash::~ExternalFlash()
 {
     // ToDo delete the new instance of extLittleFSImpl
@@ -16,6 +24,11 @@ ExternalFlash::~ExternalFlash()
     }
 }
 
+/**
+ * @brief Initialize the ExternalFlash module. Check if we can initialize
+ *        the external flash using SPI and set the flag _SpiFLashInitialized
+ *
+ */
 void ExternalFlash::init()
 {
     logDebugP("init()");
@@ -32,11 +45,16 @@ void ExternalFlash::init()
     }
 }
 
+/**
+ * @brief Setup the ExternalFlash module. Setup the Filesystem
+ *        (_extFlashLfs) to the external spi flash
+ *
+ * @param configured, true if OpenKNX is configured
+ */
 void ExternalFlash::setup(bool configured)
 {
-    logDebugP("setup()");
     // Create the external LittleFS instance with the start and end address of the flash memory
-    logDebugP("Setting up spi flash ext_LittleFS instance");
+    logDebugP("Setting up the spi flash instance");
 
     // Get now the ext_LittleFSImpl instance from the FS object
     logDebugP("Initializing LFS Settings");
@@ -102,6 +120,357 @@ void ExternalFlash::processInputKo(GroupObject &ko)
     /*NOOP*/
 }
 
+void ExternalFlash::showHelp()
+{
+    openknx.console.printHelpLine("efc", "External Flash Control Module. Use 'efc ?' for more.");
+}
+
+/**
+ * @brief Process the console commands for the ExternalFlash module.
+ *
+ * @param command, the command to process
+ * @param diagnose, if true, will not process the command
+ */
+bool ExternalFlash::processCommand(const std::string command, bool diagnose)
+{
+    bool bRet = false;
+    if ((!diagnose) && command.compare(0, 4, "efc ") == 0)
+    {
+        // check for ? or help
+        if (command.compare(4, 1, "?") == 0 || command.compare(4, 4, "help") == 0)
+        {
+            openknx.logger.begin();
+            openknx.logger.log("");
+            openknx.logger.color(CONSOLE_HEADLINE_COLOR);
+            openknx.logger.log("======================= Help: External Flash Control ===========================");
+            openknx.logger.color(0);
+            openknx.logger.log("Command(s)               Description");
+            openknx.console.printHelpLine("efc info", "Get information about the external flash");
+            openknx.console.printHelpLine("efc format", "Format the external flash");
+            openknx.console.printHelpLine("efc test", "Test the external flash by writing and reading a file");
+            openknx.console.printHelpLine("efc add /<f>", "Add a folder/file to the external flash");
+            openknx.console.printHelpLine("efc rm <f>", "Remove a file from the external flash");
+            openknx.console.printHelpLine("efc cat <f>", "Read a file from the external flash");
+            openknx.console.printHelpLine("efc echo <f> <c>", "Append content to a file in the external flash");
+            openknx.console.printHelpLine("efc mv <o> <n>", "Rename a file/folder in the external flash");
+            openknx.console.printHelpLine("efc cp <src> <dst>", "Copy a file in the external flash");
+            openknx.console.printHelpLine("efc mkdir <n>", "Create a directory in the external flash");
+            openknx.console.printHelpLine("efc rmdir <n>", "Remove a directory from the external flash");
+            openknx.console.printHelpLine("efc ls <n>", "List files in a directory in the external flash");
+            openknx.console.printHelpLine("efc ll <n>", "List files in a directory in the external flash with details");
+            openknx.logger.color(CONSOLE_HEADLINE_COLOR);
+            openknx.logger.log("--------------------------------------------------------------------------------");
+            openknx.logger.color(0);
+            openknx.logger.end();
+            bRet = false;
+        }
+        else if (command.compare(4, 4, "info") == 0)
+        {
+            FSInfo info;
+            if (_extFlashLfs.info(info))
+            {
+                logInfoP("External Flash Info:");
+                logInfoP(String("Total Bytes: " + String((unsigned long)info.totalBytes, DEC)).c_str());
+                logInfoP(String("Used Bytes: " + String((unsigned long)info.usedBytes, DEC)).c_str());
+                logInfoP(String("Block Size: " + String((unsigned long)info.blockSize, DEC)).c_str());
+                logInfoP(String("Page Size: " + String((unsigned long)info.pageSize, DEC)).c_str());
+                logInfoP(String("Max Open Files: " + String((unsigned long)info.maxOpenFiles, DEC)).c_str());
+                bRet = true;
+            }
+            else
+            {
+                logErrorP("Failed to get external flash info");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 6, "format") == 0)
+        {
+            if (_extFlashLfs.format())
+            {
+                logInfoP("External Flash formatted");
+                bRet = true;
+            }
+            else
+            {
+                logErrorP("Failed to format external flash");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 4, "test") == 0)
+        {
+            logInfoP("External Flash Test:");
+            logInfoP("Writing 'test.txt' with message 'Hello, External LittleFS!' to external LittleFS...");
+            File file = open("/test.txt", "w");
+            if (file)
+            {
+                file.print("Hello, External LittleFS!");
+                file.close();
+                logInfoP("Reading 'test.txt' from external LittleFS...");
+                file = open("/test.txt", "r");
+                if (file)
+                {
+                    String content = file.readString();
+                    logInfoP(String("Read from external LittleFS: " + content).c_str());
+                    file.close();
+                    bRet = true;
+                }
+                else
+                {
+                    logErrorP("Failed to read 'test.txt' from external LittleFS.");
+                    bRet = false;
+                }
+            }
+            else
+            {
+                logErrorP("Failed to write 'test.txt' to external LittleFS.");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 4, "add ") == 0)
+        {
+            String fileName = command.substr(8).c_str();
+            if (fileName.length() > 0 && fileName.length() <= 255 && fileName[0] == '/' && createFile(fileName.c_str()))
+            {
+                logInfoP(String("File created: " + fileName).c_str());
+                bRet = true;
+            }
+            else
+            {
+                logErrorP("File name is invalid");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 3, "rm ") == 0)
+        {
+            String fileName = command.substr(8).c_str();
+            if (fileName.length() > 0 && remove(fileName.c_str()))
+            {
+                logInfoP(String("File removed: " + fileName).c_str());
+                bRet = true;
+            }
+            else
+            {
+                logErrorP("Failed to remove file");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 4, "cat ") == 0)
+        {
+            String fileName = command.substr(9).c_str();
+            if (fileName.length() > 0)
+            {
+                uint8_t buffer[256];
+                size_t bytesRead = read(fileName.c_str(), buffer, sizeof(buffer));
+                if (bytesRead > 0)
+                {
+                    logInfoP(String("Read from file: " + String((char *)buffer)).c_str());
+                    bRet = true;
+                }
+                else
+                {
+                    logErrorP("Failed to read file");
+                    bRet = false;
+                }
+            }
+            else
+            {
+                logErrorP("Invalid file name");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 5, "echo ") == 0)
+        {
+            String fileName = command.substr(10, command.find(' ', 10) - 10).c_str();
+            String content = command.substr(command.find(' ', 10) + 1).c_str();
+
+            if (fileName.length() > 0 && content.length() > 0)
+            {
+                File file = open(fileName.c_str(), "a");
+                if (!file)
+                {
+                    file = open(fileName.c_str(), "w");
+                    if (!file)
+                    {
+                        logErrorP("Failed to create file");
+                        bRet = false;
+                    }
+                    else
+                    {
+                        logInfoP(String("File created: " + fileName).c_str());
+                        file.println(content);
+                        file.close();
+                        logInfoP(String("Appended to file: " + fileName).c_str());
+                        bRet = true;
+                    }
+                }
+                else
+                {
+                    file.println(content);
+                    file.close();
+                    logInfoP(String("Appended to file: " + fileName).c_str());
+                    bRet = true;
+                }
+            }
+            else
+            {
+                logErrorP("Invalid file name or content");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 3, "mv ") == 0)
+        {
+            String oldName = command.substr(7, command.find(' ', 7) - 7).c_str();
+            String newName = command.substr(command.find(' ', 7) + 1).c_str();
+            if (oldName.length() > 0 && newName.length() > 0 && rename(oldName.c_str(), newName.c_str()))
+            {
+                logInfoP(String("Renamed from " + oldName + " to " + newName).c_str());
+                bRet = true;
+            }
+            else
+            {
+
+                logErrorP("Failed to rename %s to %s", oldName.c_str(), newName.c_str());
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 6, "mkdir ") == 0)
+        {
+            String dirName = command.substr(11).c_str();
+            if (dirName.length() > 0 && mkdir(dirName.c_str()))
+            {
+                logInfoP(String("Directory created: " + dirName).c_str());
+                bRet = true;
+            }
+            else
+            {
+                logErrorP("Failed to create directory");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 6, "rmdir ") == 0)
+        {
+            String dirName = command.substr(11).c_str();
+            if (dirName.length() > 0 && rmdir(dirName.c_str()))
+            {
+                logInfoP(String("Directory removed: " + dirName).c_str());
+                bRet = true;
+            }
+            else
+            {
+                logErrorP("Failed to remove directory");
+                bRet = false;
+            }
+        }
+        else if (command.compare(4, 3, "ll ") == 0)
+        {
+            logInfoP("External Flash Files:");
+            String path = command.substr(7).c_str();
+            std::vector<String> files = ls(path.length() == 0 ? "/" : path.c_str());
+
+            openknx.logger.begin();
+            openknx.logger.log("");
+            openknx.logger.color(CONSOLE_HEADLINE_COLOR);
+            openknx.logger.log("====================== External Flash Control File system ======================");
+            //                  12345678901234567890123456789012345678901234567890123456789012345678901234567890
+            openknx.logger.log("--------------------------------------------------------------------------------");
+            openknx.logger.log("Name                                  | Size (b) | Type   | Created             ");
+            openknx.logger.log("--------------------------------------------------------------------------------");
+
+            openknx.logger.color(0);
+            if (files.size() == 0)
+            {
+                openknx.logger.log("..(empty)");
+            }
+            uint64_t totalSize = 0;
+            // Separate files and directories
+            std::vector<String> directories, regularFiles;
+
+            for (String file : files)
+            {
+                FSStat stat;
+                if (Statistics(file.c_str(), stat))
+                {
+                    if (stat.isDir)
+                    {
+                        directories.push_back(file);
+                    }
+                    else
+                    {
+                        regularFiles.push_back(file);
+                    }
+                }
+                else
+                {
+                    //logErrorP(String("Failed to get stats for: " + file).c_str());
+                }
+            }
+
+            // Process directories first
+            for (String dir : directories)
+            {
+                FSStat stat;
+                if (Statistics(dir.c_str(), stat))
+                {
+                    const String type = "Dir";
+                    const String size = String(getSize(dir.c_str()));
+                    const String created = String(ctime(&stat.ctime)).substring(4, 24); // Extract the date and time without the year
+                    const String name = "[" + dir + "]";
+                    totalSize += stat.size;
+                    openknx.logger.logWithValues("%-37s | %-8s | %-6s | %-20s", name.c_str(), size.c_str(), type.c_str(), created.c_str());
+                }
+                else
+                {
+                    //logErrorP(String("Failed to get stats for: " + dir).c_str());
+                }
+            }
+
+            // Process regular files
+            for (String file : regularFiles)
+            {
+                FSStat stat;
+                if (Statistics(file.c_str(), stat))
+                {
+                    const String type = "File";
+                    const String size = String(stat.size);
+                    const String created = String(ctime(&stat.ctime)).substring(4, 24); // Extract the date and time without the year
+                    const String name = file;
+                    totalSize += stat.size;
+                    openknx.logger.logWithValues("%-37s | %-8s | %-6s | %-20s", name.c_str(), size.c_str(), type.c_str(), created.c_str());
+                }
+                else
+                {
+                    //logErrorP(String("Failed to get stats for: " + file).c_str());
+                }
+            }
+            openknx.logger.color(CONSOLE_HEADLINE_COLOR);
+            openknx.logger.log("--------------------------------------------------------------------------------");
+            const String totalFiles = String("Total files: " + String((unsigned long)files.size(), DEC) + " | Total size: " + String((unsigned long)totalSize, DEC) + " bytes");
+            openknx.logger.log(totalFiles.c_str());
+            openknx.logger.log("--------------------------------------------------------------------------------");
+            openknx.logger.color(0);
+            openknx.logger.end();
+            bRet = true;
+        }
+        else if (command.compare(4, 3, "ls ") == 0)
+        {
+            String path = command.substr(7).c_str();
+            logInfoP("External Flash Files:");
+            std::vector<String> files = ls(path.length() == 0 ? "/" : path.c_str());
+            for (String file : files)
+            {
+                logInfoP(file.c_str());
+            }
+            bRet = true;
+        }
+        else
+        {
+            logErrorP("Invalid command. Use 'efs ?' for help.");
+            bRet = false;
+        }
+    }
+    return bRet;
+}
+
 /**
  * @brief Formats the file system.
  *
@@ -136,7 +505,7 @@ bool ExternalFlash::info(FSInfo &info)
  * @param stat A reference to an FSStat object to store the statistics.
  * @return True if the statistics are successfully retrieved, false otherwise.
  */
-bool ExternalFlash::stat(const String path, FSStat &stat)
+bool ExternalFlash::Statistics(const String path, FSStat &stat)
 {
     return _extFlashLfs.stat(path, &stat);
 }
@@ -447,7 +816,7 @@ time_t ExternalFlash::getCreationTime(const char *path)
     if (_extFlashLfs.stat(path, &stat))
     {
         return stat.ctime;
-    } 
+    }
     else
     {
         return 0;
@@ -481,7 +850,7 @@ time_t ExternalFlash::getAccessTime(const char *path)
     if (_extFlashLfs.stat(path, &stat))
     {
         return stat.atime;
-    } 
+    }
     else
     {
         return 0;
