@@ -1223,7 +1223,7 @@ namespace ext_littlefs_impl // LittleFS implementation for external flash
 
 }; // namespace ext_littlefs_impl
 
-#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_LITTLEFS)
+#if !defined(NO_GLOBAL_INSTANCE) && !defined(NO_GLOBAL_EXT_LITTLEFS)
 extern FS ext_LittleFS;
 extern uint8_t ext_FS_start;
 extern uint32_t ext_FS_end;

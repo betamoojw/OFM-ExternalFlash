@@ -306,7 +306,7 @@ namespace ext_littlefs_impl
 
 }; // namespace ext_littlefs_impl
 
-#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_LITTLEFS)
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_EXT_LITTLEFS)
 uint8_t ext_FS_start = 0x000;             // Start address of the W25q128 flash memory
 uint32_t ext_FS_end = FLASH_SIZE_W25Q128; // End address of the W25q128 flash memory
 
