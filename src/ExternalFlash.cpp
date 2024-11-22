@@ -98,6 +98,11 @@ void ExternalFlash::setup(bool configured)
         // Failed to mount external flash with ext_LittleFS. Delete new instance of extLittleFSImpl
         delete extLittleFSImpl;
     }
+    else
+    {
+        // Set the time callback for the external flash
+        _extFlashLfs.setTimeCallback([]() -> time_t { return openknx.time.getLocalTime().toTime_t(); });
+    }
 }
 
 /**
@@ -401,7 +406,7 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 }
                 else
                 {
-                    //logErrorP(String("Failed to get stats for: " + file).c_str());
+                    // logErrorP(String("Failed to get stats for: " + file).c_str());
                 }
             }
 
@@ -420,7 +425,7 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 }
                 else
                 {
-                    //logErrorP(String("Failed to get stats for: " + dir).c_str());
+                    // logErrorP(String("Failed to get stats for: " + dir).c_str());
                 }
             }
 
@@ -439,7 +444,7 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 }
                 else
                 {
-                    //logErrorP(String("Failed to get stats for: " + file).c_str());
+                    // logErrorP(String("Failed to get stats for: " + file).c_str());
                 }
             }
             openknx.logger.color(CONSOLE_HEADLINE_COLOR);
