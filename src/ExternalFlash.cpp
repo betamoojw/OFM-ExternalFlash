@@ -293,7 +293,7 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         }
         else if (command.compare(4, 3, "rm ") == 0)
         {
-            String fileName = command.substr(8).c_str();
+            String fileName = command.substr(7).c_str();
             if (fileName[0] != '/')
             {
                 fileName = "/" + fileName;
@@ -337,13 +337,11 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         }
         else if (command.compare(4, 5, "echo ") == 0)
         {
-            String fileName = command.substr(10, command.find(' ', 10) - 10).c_str();
-            if (fileName[0] != '/')
-            {
-                fileName = "/" + fileName;
-            }
-            String content = command.substr(command.find(' ', 10) + 1).c_str();
+            // Get the file name which begins with / and ends with space
+            String fileName = command.substr(9, command.find(' ', 9) - 9).c_str();
 
+            // After the file name, get the content to write to the file it will begin after the space of the file name
+            String content = command.substr(command.find(' ', 9) + 1).c_str();
             if (fileName.length() > 0 && content.length() > 0)
             {
                 File file = open(fileName.c_str(), "a");

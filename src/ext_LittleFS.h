@@ -1,12 +1,12 @@
 /*
-    LittleFS.h - Filesystem wrapper for LittleFS on the RP2040
-    Copyright (c) 2019 Earle F. Philhower, III.  All rights reserved.
+    Ext LittleFS.cpp - Wrapper for LittleFS for RP2040
+    Copyright (c) 2024 Erkan Çolak. All rights reserved.
 
-    Based heavily off of the SPIFFS equivalent code in the ESP8266 core
-    "Copyright (c) 2015 Ivan Grokhotkov. All rights reserved."
+    Based on the Wrapper for LittleFS for RP2040 which is
+    Copyright (c) 2021 Earle F. Philhower, III.  All rights reserved.
 
-    This code was influenced by NodeMCU and Sming libraries, and first version of
-    Arduino wrapper written by Hristo Gochkov.
+    Based extensively off of the ESP8266 SPIFFS code, which is
+    Copyright (c) 2015 Ivan Grokhotkov. All rights reserved.
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
