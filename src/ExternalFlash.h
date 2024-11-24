@@ -1,4 +1,20 @@
-#pragma once
+#pragma once  
+/**
+ * @class ExternalFlash
+ * @brief Interface for managing external flash memory in the OpenKNX ecosystem.
+ *
+ * This class provides methods to initialize, format, and perform various file operations on external flash memory.
+ * It supports file and directory creation, removal, reading, writing, renaming, moving, and copying. Additionally,
+ * it offers file statistics and filesystem information, designed for seamless integration with the W25Q128 Flash
+ * memory chip.
+ *
+ * @note Designed to work with the W25Q128 Flash memory chip and integrates seamlessly with the OpenKNX ecosystem.
+ *       Should be compatible with other external flash memory chips. Check the datasheet for compatibility.
+ *
+ * @author Erkan Çolak
+ * @copyright Copyright (c) 2024 Erkan Çolak (Licensed under GNU GPL v3.0)
+ */
+
 #include "OpenKNX.h"
 #include "W25Q128.h"
 #include "ext_LittleFS.h"
@@ -61,7 +77,7 @@ class ExternalFlash : public OpenKNX::Module
     W25Q128 _SpiFlash;             // Instance of external flash
     lfs_config _extFlashLfsConfig; // Configuration for external flash
     FS _extFlashLfs;               // LittleFS object for external flash
-    bool _SpiFLashInitialized;     // Flag to check if the external flash is initialized
+    bool _SpiFlashInit;            // Flag to check if the external flash is initialized
     bool _mounted;                 // Flag to check if the filesystem is mounted
 
     void setupExternalConfig();

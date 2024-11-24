@@ -1,19 +1,33 @@
+/**
+ * @class ExternalFlash
+ * @brief Interface for managing external flash memory in the OpenKNX ecosystem.
+ *
+ * This class provides methods to initialize, format, and perform various file operations on external flash memory.
+ * It supports file and directory creation, removal, reading, writing, renaming, moving, and copying. Additionally,
+ * it offers file statistics and filesystem information, designed for seamless integration with the W25Q128 Flash
+ * memory chip.
+ *
+ * @note Designed to work with the W25Q128 Flash memory chip and integrates seamlessly with the OpenKNX ecosystem.
+ *       Should be compatible with other external flash memory chips. Check the datasheet for compatibility.
+ *
+ * @author Erkan Çolak
+ * @copyright Copyright (c) 2024 Erkan Çolak (Licensed under GNU GPL v3.0)
+ */
+
 #include "ExternalFlash.h"
 
 ExternalFlash extFlashModule; // External flash module instance
 
 /**
  * @brief Construct a new External Flash:: External Flash object
- *
  */
-ExternalFlash::ExternalFlash() : _extFlashLfs(FSImplPtr(nullptr)),
-                                 _SpiFLashInitialized(false), _mounted(false)
+ExternalFlash::ExternalFlash() : _extFlashLfs(FSImplPtr(nullptr)),     // Initialize the LittleFS object
+                                 _SpiFlashInit(false), _mounted(false) // Initialize the flags
 {
 }
 
 /**
  * @brief Destroy the External Flash:: External Flash object
- *
  */
 ExternalFlash::~ExternalFlash()
 {
@@ -26,29 +40,26 @@ ExternalFlash::~ExternalFlash()
 
 /**
  * @brief Initialize the ExternalFlash module. Check if we can initialize
- *        the external flash using SPI and set the flag _SpiFLashInitialized
- *
+ *        the external flash using SPI and set the flag _SpiFlashInit
  */
 void ExternalFlash::init()
 {
     logDebugP("init()");
     // Initialize the external flash
     logDebugP("Initializing external flash");
-    if (!_SpiFlash.begin())
+    if (!_SpiFlash.begin()) // Initialize the external flash
     {
         logInfoP("Failed to initialize external spi flash");
     }
     else
     {
         logInfoP("External spi flash initialized");
-        _SpiFLashInitialized = true;
+        _SpiFlashInit = true;
     }
 }
 
 /**
- * @brief Setup the ExternalFlash module. Setup the Filesystem
- *        (_extFlashLfs) to the external spi flash
- *
+ * @brief Setup the ExternalFlash module. Setup the Filesystem (_extFlashLfs) to the external spi flash
  * @param configured, true if OpenKNX is configured
  */
 void ExternalFlash::setup(bool configured)
@@ -62,25 +73,32 @@ void ExternalFlash::setup(bool configured)
     uint8_t extFlash_FS_start_addr = 0x000;             // Start address of the W25q128 flash memory
     uint32_t extFLash_FS_end_addr = FLASH_SIZE_W25Q128; // End address of the W25q128 flash memory
 
-    ext_littlefs_impl::ext_LittleFSImpl *extLittleFSImpl = new ext_littlefs_impl::ext_LittleFSImpl(&extFlash_FS_start_addr, extFLash_FS_end_addr, PAGE_SIZE_W25Q128_256B, SECTOR_SIZE_W25Q128_4KB, 16);
+    ext_littlefs_impl::ext_LittleFSImpl *extLittleFSImpl =
+        new ext_littlefs_impl::ext_LittleFSImpl(
+            &extFlash_FS_start_addr, extFLash_FS_end_addr, // Start and end address of the flash memory
+            PAGE_SIZE_W25Q128_256B,                        // Size of a page in flash
+            SECTOR_SIZE_W25Q128_4KB, 16);                  // Size of a block in flash, Maximum number of open file descriptors
 
     logDebugP("Setting up external ext_LittleFS configuration");
     if (extLittleFSImpl->setLFSConfig(_extFlashLfsConfig))
     {
-        _extFlashLfs = FS(FSImplPtr(extLittleFSImpl));
+        _extFlashLfs = FS(FSImplPtr(extLittleFSImpl)); // Set the external flash filesystem
         logDebugP("Mounting external flash with ext_LittleFS");
-        if (!_extFlashLfs.begin())
+        if (!_extFlashLfs.begin()) // Mount the external flash
         {
             logErrorP("Failed to mount external flash with ext_LittleFS. Formatting...");
-            if (_extFlashLfs.format())
+            if (_extFlashLfs.format()) // Format the external flash it it fails to mount
             {
-                logInfoP("External  flash formatted with ext_LittleFS");
-                _mounted = true;
+                if (_extFlashLfs.begin()) // Retry to mount the external flash
+                {
+                    logInfoP("External  flash formatted with ext_LittleFS");
+                    _mounted = true;
+                }
+                else
+                    logErrorP("Failed to mount external flash with ext_LittleFS after formatting");
             }
             else
-            {
                 logErrorP("Failed to format external flash with ext_LittleFS");
-            }
         }
         else
         {
@@ -89,9 +107,7 @@ void ExternalFlash::setup(bool configured)
         }
     }
     else
-    {
         logErrorP("Failed to set external flash configuration");
-    }
 
     if (!_mounted)
     {
@@ -100,14 +116,13 @@ void ExternalFlash::setup(bool configured)
     }
     else
     {
-        // Set the time callback for the external flash
+        // Set the time callback for the external flash, this is optional.
         _extFlashLfs.setTimeCallback([]() -> time_t { return openknx.time.getLocalTime().toTime_t(); });
     }
 }
 
 /**
  * @brief loop for the ExternalFlash module
- *
  * @param configured, true if OpenKNX is configured
  */
 void ExternalFlash::loop(bool configured)
@@ -117,7 +132,6 @@ void ExternalFlash::loop(bool configured)
 
 /**
  * @brief Process GroupObjects
- *
  * @param ko, GroupObject to process
  */
 void ExternalFlash::processInputKo(GroupObject &ko)
@@ -132,7 +146,6 @@ void ExternalFlash::showHelp()
 
 /**
  * @brief Process the console commands for the ExternalFlash module.
- *
  * @param command, the command to process
  * @param diagnose, if true, will not process the command
  */
@@ -141,33 +154,32 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
     bool bRet = false;
     if ((!diagnose) && command.compare(0, 4, "efc ") == 0)
     {
-        // check for ? or help
-        if (command.compare(4, 1, "?") == 0 || command.compare(4, 4, "help") == 0)
+        bRet = true; // Ok, we are in efc command!
+        if (command.compare(4, 1, "?") == 0 || command.compare(4, 4, "help") == 0 || command.length() == 4)
         {
             openknx.logger.begin();
             openknx.logger.log("");
             openknx.logger.color(CONSOLE_HEADLINE_COLOR);
-            openknx.logger.log("======================= Help: External Flash Control ===========================");
+            openknx.logger.log("============================= Help: External Flash Control ============================="); // 88 characters
             openknx.logger.color(0);
             openknx.logger.log("Command(s)               Description");
             openknx.console.printHelpLine("efc info", "Get information about the external flash");
-            openknx.console.printHelpLine("efc format", "Format the external flash");
-            openknx.console.printHelpLine("efc test", "Test the external flash by writing and reading a file");
             openknx.console.printHelpLine("efc add /<f>", "Add a folder/file to the external flash");
-            openknx.console.printHelpLine("efc rm <f>", "Remove a file from the external flash");
-            openknx.console.printHelpLine("efc cat <f>", "Read a file from the external flash");
-            openknx.console.printHelpLine("efc echo <f> <c>", "Append content to a file in the external flash");
-            openknx.console.printHelpLine("efc mv <o> <n>", "Rename a file/folder in the external flash");
-            openknx.console.printHelpLine("efc cp <src> <dst>", "Copy a file in the external flash");
-            openknx.console.printHelpLine("efc mkdir <n>", "Create a directory in the external flash");
-            openknx.console.printHelpLine("efc rmdir <n>", "Remove a directory from the external flash");
-            openknx.console.printHelpLine("efc ls <n>", "List files in a directory in the external flash");
-            openknx.console.printHelpLine("efc ll <n>", "List files in a directory in the external flash with details");
+            openknx.console.printHelpLine("efc rm /<f>", "Remove a file from the external flash");
+            openknx.console.printHelpLine("efc cat /<f>", "Read a file from the external flash");
+            openknx.console.printHelpLine("efc echo /<file> <text>", "Append content to a file in the external flash");
+            openknx.console.printHelpLine("efc mv /<src> /<targt>", "Rename/ or Move a file or folder");
+            openknx.console.printHelpLine("efc cp /<src> /<targt>", "Copy a file in the external flash");
+            openknx.console.printHelpLine("efc mkdir /<name>", "Create a directory in the external flash");
+            openknx.console.printHelpLine("efc rmdir /<name>", "Remove a directory from the external flash");
+            openknx.console.printHelpLine("efc ls /<path>", "Short list files in a directory in the external flash");
+            openknx.console.printHelpLine("efc ll /<path>", "List files in a directory in the external flash with details");
+            openknx.console.printHelpLine("efc format", "ATTENTION: Will Format the external flash");
+            openknx.console.printHelpLine("efc test", "Creating files, folders, writing and reading files");
             openknx.logger.color(CONSOLE_HEADLINE_COLOR);
-            openknx.logger.log("--------------------------------------------------------------------------------");
+            openknx.logger.log("----------------------------------------------------------------------------------------"); // 88 characters
             openknx.logger.color(0);
             openknx.logger.end();
-            bRet = false;
         }
         else if (command.compare(4, 4, "info") == 0)
         {
@@ -180,7 +192,6 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 logInfoP(String("Block Size: " + String((unsigned long)info.blockSize, DEC)).c_str());
                 logInfoP(String("Page Size: " + String((unsigned long)info.pageSize, DEC)).c_str());
                 logInfoP(String("Max Open Files: " + String((unsigned long)info.maxOpenFiles, DEC)).c_str());
-                bRet = true;
             }
             else
             {
@@ -193,7 +204,6 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
             if (_extFlashLfs.format())
             {
                 logInfoP("External Flash formatted");
-                bRet = true;
             }
             else
             {
@@ -217,7 +227,6 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                     String content = file.readString();
                     logInfoP(String("Read from external LittleFS: " + content).c_str());
                     file.close();
-                    bRet = true;
                 }
                 else
                 {
@@ -230,14 +239,51 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 logErrorP("Failed to write 'test.txt' to external LittleFS.");
                 bRet = false;
             }
+
+            logInfoP("Creating files, folders, writing and reading files. This may take a while. Please wait...");
+            // Create multiple directories and files with random content
+            const char *dirNames[] = {"/", "/documents", "/projects", "/backups", "/logs", "/temp", "/trash", "/downloads", "VeryLongFolderNameVeryLongFolderNameVeryLongFolderName"};
+            const char *fileNames[] = {"HAL9000.txt", "Odyssey.txt", "Discovery.txt", "Jupiter.txt", "Monolith.txt",
+                                       "Bowman.txt", "Poole.text", "Floyd.ini", "Curnow.fcg", "Chandra.dat",
+                                       "Whitehead.bin", "Hunter.uf2", "Kimball.tmp", "Tanya", "Victor.logfile", "VeryLongFileNameVeryLongFileNameVeryLongFileName.log"};
+
+            for (int i = 0; i < sizeof(dirNames) / sizeof(dirNames[0]); ++i) // Create 8 directories
+            {
+                mkdir(dirNames[i]);
+                for (int j = 0; j < sizeof(fileNames) / sizeof(fileNames[0]); ++j) // Create 15 files in each directory
+                {
+                    String fileName = String(dirNames[i]) + "/" + fileNames[j];
+                    File file = open(fileName.c_str(), "w");
+                    logDebugP(String("Creating file: " + fileName).c_str());
+                    if (file) // Write now Random content to the file. Which is a random numbers and the HAL9000 message
+                    {
+                        logDebugP(String("Writing test content to file: " + fileName).c_str());
+                        String content = "HAL9000: I'm sorry, Dave. I'm afraid I can't do that.\n";
+                        for (int k = 0; k < random(1, 100); ++k)
+                        {
+                            file.print(content);
+                            for (int k = 0; k < random(1, 100); ++k)
+                            {
+                                file.print(String(random(0, 1000)) + "\n");
+                            }
+                        }
+                        file.close();
+                    }
+                }
+            }
+            logInfoP("Files and folders created. To show the list of files use 'efc ls /' or 'efc ll /'");
         }
         else if (command.compare(4, 4, "add ") == 0)
         {
             String fileName = command.substr(8).c_str();
+            if (fileName[0] != '/')
+            {
+                fileName = "/" + fileName;
+            }
+
             if (fileName.length() > 0 && fileName.length() <= 255 && fileName[0] == '/' && createFile(fileName.c_str()))
             {
                 logInfoP(String("File created: " + fileName).c_str());
-                bRet = true;
             }
             else
             {
@@ -248,10 +294,13 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         else if (command.compare(4, 3, "rm ") == 0)
         {
             String fileName = command.substr(8).c_str();
+            if (fileName[0] != '/')
+            {
+                fileName = "/" + fileName;
+            }
             if (fileName.length() > 0 && remove(fileName.c_str()))
             {
                 logInfoP(String("File removed: " + fileName).c_str());
-                bRet = true;
             }
             else
             {
@@ -262,6 +311,10 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         else if (command.compare(4, 4, "cat ") == 0)
         {
             String fileName = command.substr(9).c_str();
+            if (fileName[0] != '/')
+            {
+                fileName = "/" + fileName;
+            }
             if (fileName.length() > 0)
             {
                 uint8_t buffer[256];
@@ -269,7 +322,6 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 if (bytesRead > 0)
                 {
                     logInfoP(String("Read from file: " + String((char *)buffer)).c_str());
-                    bRet = true;
                 }
                 else
                 {
@@ -286,6 +338,10 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         else if (command.compare(4, 5, "echo ") == 0)
         {
             String fileName = command.substr(10, command.find(' ', 10) - 10).c_str();
+            if (fileName[0] != '/')
+            {
+                fileName = "/" + fileName;
+            }
             String content = command.substr(command.find(' ', 10) + 1).c_str();
 
             if (fileName.length() > 0 && content.length() > 0)
@@ -305,7 +361,6 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                         file.println(content);
                         file.close();
                         logInfoP(String("Appended to file: " + fileName).c_str());
-                        bRet = true;
                     }
                 }
                 else
@@ -313,7 +368,6 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                     file.println(content);
                     file.close();
                     logInfoP(String("Appended to file: " + fileName).c_str());
-                    bRet = true;
                 }
             }
             else
@@ -325,15 +379,21 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         else if (command.compare(4, 3, "mv ") == 0)
         {
             String oldName = command.substr(7, command.find(' ', 7) - 7).c_str();
+            if (oldName[0] != '/')
+            {
+                oldName = "/" + oldName;
+            }
             String newName = command.substr(command.find(' ', 7) + 1).c_str();
+            if (newName[0] != '/')
+            {
+                newName = "/" + newName;
+            }
             if (oldName.length() > 0 && newName.length() > 0 && rename(oldName.c_str(), newName.c_str()))
             {
                 logInfoP(String("Renamed from " + oldName + " to " + newName).c_str());
-                bRet = true;
             }
             else
             {
-
                 logErrorP("Failed to rename %s to %s", oldName.c_str(), newName.c_str());
                 bRet = false;
             }
@@ -341,10 +401,13 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         else if (command.compare(4, 6, "mkdir ") == 0)
         {
             String dirName = command.substr(11).c_str();
+            if (dirName[0] != '/')
+            {
+                dirName = "/" + dirName;
+            }
             if (dirName.length() > 0 && mkdir(dirName.c_str()))
             {
                 logInfoP(String("Directory created: " + dirName).c_str());
-                bRet = true;
             }
             else
             {
@@ -355,10 +418,13 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
         else if (command.compare(4, 6, "rmdir ") == 0)
         {
             String dirName = command.substr(11).c_str();
+            if (dirName[0] != '/')
+            {
+                dirName = "/" + dirName;
+            }
             if (dirName.length() > 0 && rmdir(dirName.c_str()))
             {
                 logInfoP(String("Directory removed: " + dirName).c_str());
-                bRet = true;
             }
             else
             {
@@ -371,25 +437,22 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
             logInfoP("External Flash Files:");
             String path = command.substr(7).c_str();
             std::vector<String> files = ls(path.length() == 0 ? "/" : path.c_str());
-
             openknx.logger.begin();
             openknx.logger.log("");
             openknx.logger.color(CONSOLE_HEADLINE_COLOR);
-            openknx.logger.log("====================== External Flash Control File system ======================");
-            //                  12345678901234567890123456789012345678901234567890123456789012345678901234567890
-            openknx.logger.log("--------------------------------------------------------------------------------");
-            openknx.logger.log("Name                                  | Size (b) | Type   | Created             ");
-            openknx.logger.log("--------------------------------------------------------------------------------");
-
+            openknx.logger.log("========================== External Flash Control File system =========================="); // 80 characters
+            openknx.logger.log("----------------------------------------------------------------------------------------");
+            openknx.logger.log("Name                                      | Size (bytes) | Type   | Created             ");
+            openknx.logger.log("----------------------------------------------------------------------------------------"); // 88 characters
             openknx.logger.color(0);
             if (files.size() == 0)
             {
                 openknx.logger.log("..(empty)");
             }
             uint64_t totalSize = 0;
+            u_int64_t CountedFoders = 0;
             // Separate files and directories
             std::vector<String> directories, regularFiles;
-
             for (String file : files)
             {
                 FSStat stat;
@@ -398,6 +461,7 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                     if (stat.isDir)
                     {
                         directories.push_back(file);
+                        CountedFoders++;
                     }
                     else
                     {
@@ -406,7 +470,7 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 }
                 else
                 {
-                    // logErrorP(String("Failed to get stats for: " + file).c_str());
+                    logErrorP(String("Failed to get stats for: " + file).c_str());
                 }
             }
 
@@ -417,15 +481,22 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 if (Statistics(dir.c_str(), stat))
                 {
                     const String type = "Dir";
-                    const String size = String(getSize(dir.c_str()));
-                    const String created = String(ctime(&stat.ctime)).substring(4, 24); // Extract the date and time without the year
-                    const String name = "[" + dir + "]";
+                    char formattedTime[25];
+                    strftime(formattedTime, sizeof(formattedTime), "%H:%M:%S %d.%m.", localtime(&stat.ctime));
+                    sprintf(formattedTime + strlen(formattedTime), "%02d", (localtime(&stat.ctime)->tm_year + 1900) % 100);
+
+                    const String name = "[" + ((dir.length() > 37) ? dir.substring(0, 36) + "..." : dir) + "]";
                     totalSize += stat.size;
-                    openknx.logger.logWithValues("%-37s | %-8s | %-6s | %-20s", name.c_str(), size.c_str(), type.c_str(), created.c_str());
+                    openknx.logger.logWithValues("%-41s | %-12s | %-6s | %-20s",
+                                                 name.c_str(),
+                                                 String(/*getSize(dir.c_str())*/ "").c_str(), type.c_str(), formattedTime);
                 }
                 else
                 {
-                    // logErrorP(String("Failed to get stats for: " + dir).c_str());
+                    // Stat failed. Show only the directory name
+                    openknx.logger.logWithValues("%-41s | %-12s | %-6s | %-20s",
+                                                 String((dir.length() > 41) ? dir.substring(0, 38) + "..." : dir).c_str(),
+                                                 "N/A", "Dir", "N/A");
                 }
             }
 
@@ -436,25 +507,51 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
                 if (Statistics(file.c_str(), stat))
                 {
                     const String type = "File";
-                    const String size = String(stat.size);
-                    const String created = String(ctime(&stat.ctime)).substring(4, 24); // Extract the date and time without the year
-                    const String name = file;
+                    char formattedTime[25];
+                    strftime(formattedTime, sizeof(formattedTime), "%H:%M:%S %d.%m.", localtime(&stat.ctime));
+                    sprintf(formattedTime + strlen(formattedTime), "%02d", (localtime(&stat.ctime)->tm_year + 1900) % 100);
                     totalSize += stat.size;
-                    openknx.logger.logWithValues("%-37s | %-8s | %-6s | %-20s", name.c_str(), size.c_str(), type.c_str(), created.c_str());
+                    openknx.logger.logWithValues("%-41s | %-12s | %-6s | %-20s",
+                                                 // file.c_str(),
+                                                 String((file.length() > 41) ? file.substring(0, 38) + "..." : file).c_str(),
+                                                 String(stat.size).c_str(), type.c_str(), formattedTime);
                 }
                 else
                 {
-                    // logErrorP(String("Failed to get stats for: " + file).c_str());
+                    // Stat failed. Show only the file name
+                    openknx.logger.logWithValues("%-41s | %-12s | %-6s | %-20s",
+                                                 String((file.length() > 41) ? file.substring(0, 38) + "..." : file).c_str(),
+                                                 "N/A", "File", "N/A");
                 }
             }
             openknx.logger.color(CONSOLE_HEADLINE_COLOR);
-            openknx.logger.log("--------------------------------------------------------------------------------");
-            const String totalFiles = String("Total files: " + String((unsigned long)files.size(), DEC) + " | Total size: " + String((unsigned long)totalSize, DEC) + " bytes");
-            openknx.logger.log(totalFiles.c_str());
-            openknx.logger.log("--------------------------------------------------------------------------------");
+            openknx.logger.log("----------------------------------------------------------------------------------------"); // 88 characters
+            // const String totalFiles = String("Total files: " + String((unsigned long)files.size(), DEC) + " | Total size: " + String((unsigned long)totalSize, DEC) + " bytes");
+            openknx.logger.logWithValues("%-20s %-20s | %-12s",
+                                         String("Folders: " + String((unsigned long)CountedFoders, DEC)).c_str(),
+                                         String("Files: " + String((unsigned long)(files.size() - CountedFoders), DEC)).c_str(),
+                                         String("Size: " + String((unsigned long)totalSize, DEC) + " bytes").c_str());
+            openknx.logger.log("----------------------------------------------------------------------------------------"); // 88 characters
+
+            FSInfo info;
+            if (_extFlashLfs.info(info))
+            {
+                const float usedPercentage = (float)info.usedBytes / info.totalBytes * 100.0f;
+                openknx.logger.log("Total Storage extFlash: ");
+                openknx.logger.logWithValues("Used: %-20s [%-50s] %.1f%%", // Used space
+                                             String((unsigned long)info.usedBytes, DEC).c_str(),
+                                             String("==============================================").substring(0, (int)(usedPercentage / 2)).c_str(), // Bar length
+                                             usedPercentage);
+
+                openknx.logger.logWithValues("Free: %-20s [%-50s] %.1f%%", // Free space
+                                             String((unsigned long)(info.totalBytes - info.usedBytes), DEC).c_str(),
+                                             String("==============================================").substring(0, (50 - (int)(usedPercentage / 2))).c_str(), // Bar length
+                                             100.0f - usedPercentage);
+            }
+            openknx.logger.log("----------------------------------------------------------------------------------------"); // 88 characters
+
             openknx.logger.color(0);
             openknx.logger.end();
-            bRet = true;
         }
         else if (command.compare(4, 3, "ls ") == 0)
         {
@@ -465,7 +562,6 @@ bool ExternalFlash::processCommand(const std::string command, bool diagnose)
             {
                 logInfoP(file.c_str());
             }
-            bRet = true;
         }
         else
         {
