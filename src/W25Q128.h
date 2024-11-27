@@ -1,28 +1,13 @@
 #pragma once
 /**
- * @class W25Q128
- * @brief A sleek and modern interface for the W25Q128 Flash memory chip, tailored for OpenKNX.
- * 
- * This class offers a comprehensive suite of methods to initialize, read, write, and erase the W25Q128 Flash memory chip.
- * It also includes functionalities to enable and disable write access, read the status register, and ensure the Flash memory is ready for operations.
- * Additionally, it provides a method to retrieve the chip ID and a test function to validate the Flash memory's performance.
- * 
- * Utilizing SPI communication, this class efficiently manages the chip select (CS), write protect (WP), and hold (HOLD) pins, 
- * and handles all SPI transactions seamlessly.
- * 
- * Example usage:
- * @code
- * W25Q128 flash;
- * flash.begin();
- * uint8_t data[256];
- * flash.read(0x000000, data, sizeof(data));
- * @endcode
- * 
- * @note Specifically designed for the W25Q128 Flash memory chip, this class is an integral part of the OpenKNX ecosystem.
- * 
- * @author by Erkan Çolak, 2024
+ * @file        W25Q128.h
+ * @brief       Interface for external flash memory management in OpenKNX.
+ * @author      Erkan Çolak
+ * @version     1.0.0
+ * @date        2024-11-27
+ * @copyright   Copyright (c) 2024, Erkan Çolak
+ *              Licensed under GNU GPL v3.0
  */
-
 #include <Arduino.h>
 #include <FS.h>
 #include <OpenKNX.h>

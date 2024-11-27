@@ -10,8 +10,7 @@
  * @note Designed to work with the W25Q128 Flash memory chip and integrates seamlessly with the OpenKNX ecosystem.
  *       Should be compatible with other external flash memory chips. Check the datasheet for compatibility.
  *
- * @author Erkan Çolak
- * @copyright Copyright (c) 2024 Erkan Çolak (Licensed under GNU GPL v3.0)
+ * @copyright Copyright (c) 2024 Erkan Çolak - (Licensed under GNU GPL v3.0)
  */
 
 #include "ExternalFlash.h"
