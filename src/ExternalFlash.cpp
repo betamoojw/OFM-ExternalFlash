@@ -43,7 +43,6 @@ ExternalFlash::~ExternalFlash()
  */
 void ExternalFlash::init()
 {
-    logDebugP("init()");
     // Initialize the external flash
     logDebugP("Initializing external flash");
     if (!_SpiFlash.begin()) // Initialize the external flash
