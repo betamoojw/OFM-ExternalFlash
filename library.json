@@ -1,0 +1,17 @@
+{
+  "name": "OFM-ExternalFlash",
+  "version": "0.0.1",
+  "description": "OFM-ExternalFlash is a library for the Open KNX Firmware Manager (OFM) to store configuration data in an external flash memory (i.e. W25Q128).",
+  "homepage": "https://openknx.de",
+  "authors": {
+    "name": "Erkan Çolak",
+    "email": "erkan@colak.de",
+    "maintainer": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenKNX/OFM-ExternalFlash.git"
+  },
+  "dependencies": {
+  }
+}
