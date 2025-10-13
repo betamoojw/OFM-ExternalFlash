@@ -14,14 +14,27 @@
 #include <SPI.h>
 #include "../lib/littlefs/lfs.h"
 
-// SPI Configuration fo the external Flash on the OPenKNX REG2 PiPico Board
-#define W25Q128_SPI_PORT SPI1 // SPI1 will be used.
-#define W25Q128_CS_PIN 13     // Chip Select Pin
-#define W25Q128_SCK_PIN 10    // Clock Pin
-#define W25Q128_MOSI_PIN 11   // MOSI Pin
-#define W25Q128_MISO_PIN 12   // MISO Pin
-#define W25Q128_WP_PIN 14     // Write Protect Pin
-#define W25Q128_HOLD_PIN 15   // Hold Pin
+#ifndef OKNXHW_REG2_EXTFLASH_SPI_SCK // SPI Clock pin
+ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_SCK);
+#endif
+#ifndef OKNXHW_REG2_EXTFLASH_SPI_INST // SPI instance (e.g., SPI, SPI1)
+ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_INST);
+#endif
+#ifndef OKNXHW_REG2_EXTFLASH_SPI_MOSI // MOSI pin
+ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_MOSI);
+#endif
+#ifndef OKNXHW_REG2_EXTFLASH_SPI_MISO // MISO pin
+ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_MISO);
+#endif
+#ifndef OKNXHW_REG2_EXTFLASH_SPI_CS // Chip Select (CS) pin
+ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_CS);
+#endif
+#ifndef OKNXHW_REG2_EXTFLASH_SPI_WP // Write Protect (WP) pin
+ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_WP);
+#endif
+#ifndef OKNXHW_REG2_EXTFLASH_SPI_HOLD // Hold pin
+ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_HOLD);
+#endif
 
 // W25Q128 SPecific Commands (could be compatible with other W25Qxx Flash Chips)
 #define CMD_READ_ID 0x9F          // Read ID Command

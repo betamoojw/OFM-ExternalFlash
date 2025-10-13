@@ -13,7 +13,17 @@ The `OFM-ExternalFlash` module is a library for managing and utilizing external 
 
 ## Usage
 
-To use the `OFM-ExternalFlash` library, include it in your project and use the provided functions to manage the external flash memory.
+To use the `OFM-ExternalFlash` library, include it in your project and use the provided functions to manage the external flash memory. 
+
+### PlatformIO Configuration
+To enable the external flash module, add the following definitions to your `platformio.ini`:
+```ini
+; Enable the external flash module
+-D EXTERNAL_FLASH_MODULE
+
+; Disable the global external LittleFS
+-D NO_GLOBAL_EXT_LITTLEFS
+```
 
 ## Example
 
