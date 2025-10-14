@@ -1,7 +1,7 @@
-#pragma once  
+#pragma once
 /**
  * @file        ExternalFlash.h
- * @brief       This module offers file statistics and filesystem information, 
+ * @brief       This module offers file statistics and filesystem information,
  *              designed for seamless integration with the W25Q128 Flash
  * @author      Erkan Çolak
  * @version     1.0.0

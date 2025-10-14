@@ -8,33 +8,35 @@ bool W25Q128::begin()
 {
 
     // Initialise the GPIOs
-    pinMode(W25Q128_CS_PIN, OUTPUT);      // Set CS pin as output
-    digitalWrite(W25Q128_CS_PIN, HIGH);   // Set CS high
+    pinMode(OKNXHW_REG2_EXTFLASH_SPI_CS, OUTPUT);    // Set CS pin as output
+    digitalWrite(OKNXHW_REG2_EXTFLASH_SPI_CS, HIGH); // Set CS high
 
-    pinMode(W25Q128_WP_PIN, OUTPUT);      // Set WP pin as output
-    digitalWrite(W25Q128_WP_PIN, HIGH);   // Set WP high
+    pinMode(OKNXHW_REG2_EXTFLASH_SPI_WP, OUTPUT);    // Set WP pin as output
+    digitalWrite(OKNXHW_REG2_EXTFLASH_SPI_WP, HIGH); // Set WP high
 
-    pinMode(W25Q128_HOLD_PIN, OUTPUT);    // Set HOLD pin as output
-    digitalWrite(W25Q128_HOLD_PIN, HIGH); // Set HOLD high
+    pinMode(OKNXHW_REG2_EXTFLASH_SPI_HOLD, OUTPUT);    // Set HOLD pin as output
+    digitalWrite(OKNXHW_REG2_EXTFLASH_SPI_HOLD, HIGH); // Set HOLD high
+
+    #define W25Q128_SPI_PORT OKNXHW_REG2_EXTFLASH_SPI_INST
 
     // Seteup the SPI Port
-    W25Q128_SPI_PORT.setSCK(W25Q128_SCK_PIN); // Set CLK pin
-    W25Q128_SPI_PORT.setTX(W25Q128_MOSI_PIN); // Set MOSI pin
-    W25Q128_SPI_PORT.setRX(W25Q128_MISO_PIN); // Set MISO pin
-    
-    W25Q128_SPI_PORT.begin();                 // Start SPI1
-    //delay(100);                             // Wait for initialization
+    W25Q128_SPI_PORT.setSCK(OKNXHW_REG2_EXTFLASH_SPI_SCK); // Set CLK pin
+    W25Q128_SPI_PORT.setTX(OKNXHW_REG2_EXTFLASH_SPI_MOSI); // Set MOSI pin
+    W25Q128_SPI_PORT.setRX(OKNXHW_REG2_EXTFLASH_SPI_MISO); // Set MISO pin
 
-    //pinMode(W25Q128_CS_PIN, OUTPUT); // Set CS pin as output
-    deselect();                      // Set CS high
-    //openknx.logger.log("W25Q128 initialized!");
+    W25Q128_SPI_PORT.begin(); // Start SPI1
+    // delay(100);                             // Wait for initialization
+
+    // pinMode(W25Q128_CS_PIN, OUTPUT); // Set CS pin as output
+    deselect(); // Set CS high
+    // openknx.logger.log("W25Q128 initialized!");
     instance = this; // Set the static instance pointer
     return true;     // Replace with actual initialization logic
 }
 
 /**
  * @brief Enable write access to the Flash memory
- * 
+ *
  */
 void W25Q128::enableWrite()
 {
@@ -45,7 +47,7 @@ void W25Q128::enableWrite()
 
 /**
  * @brief Disable write access to the Flash memory
- * 
+ *
  */
 void W25Q128::disableWrite()
 {
@@ -56,7 +58,7 @@ void W25Q128::disableWrite()
 
 /**
  * @brief Read the status register of the Flash memory
- * 
+ *
  * @return uint8_t the status register value
  */
 uint8_t W25Q128::readStatus()
@@ -70,19 +72,19 @@ uint8_t W25Q128::readStatus()
 
 /**
  * @brief Wait until the Flash memory is ready
- * 
+ *
  */
 void W25Q128::waitUntilReady()
 {
     while (readStatus() & 0x01) // Check if the Flash is busy
-    { 
+    {
         delay(1);
     }
 }
 
 /**
  * @brief Read data from the Flash memory
- * 
+ *
  * @param addr the address to read from
  * @param buffer the buffer to store the read data
  * @param size the size of the data to read
@@ -106,7 +108,7 @@ int W25Q128::read(uint32_t addr, uint8_t *buffer, size_t size)
 
 /**
  * @brief Write data to the Flash memory
- * 
+ *
  * @param addr the address to write to
  * @param buffer the buffer with the data to write
  * @param size the size of the data to write
@@ -143,7 +145,7 @@ int W25Q128::program(uint32_t addr, const uint8_t *buffer, size_t size)
 
 /**
  * @brief Erase a sector in the Flash memory
- * 
+ *
  * @param addr the address of the sector to erase
  * @return int 0 if successful
  */
@@ -162,7 +164,7 @@ int W25Q128::erase(uint32_t addr)
 
 /**
  * @brief Erase the entire Flash memory
- * 
+ *
  */
 void W25Q128::chipErase()
 {
@@ -177,27 +179,27 @@ void W25Q128::chipErase()
 
 /**
  * @brief Select the Flash memory
- * 
+ *
  */
 void W25Q128::select()
-{   
-    digitalWrite(W25Q128_CS_PIN, LOW);
+{
+    digitalWrite(OKNXHW_REG2_EXTFLASH_SPI_CS, LOW);
     W25Q128_SPI_PORT.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0)); // SPI-Settings: 8MHz, MSB first, Mode 0
 }
 
 /**
  * @brief Deselect the Flash memory
- * 
+ *
  */
 void W25Q128::deselect()
 {
     W25Q128_SPI_PORT.endTransaction(); // End SPI transaction
-    digitalWrite(W25Q128_CS_PIN, HIGH);
+    digitalWrite(OKNXHW_REG2_EXTFLASH_SPI_CS, HIGH);
 }
 
 /**
  * @brief Send a command to the Flash memory
- * 
+ *
  * @param cmd the command to send
  */
 void W25Q128::sendCommand(uint8_t cmd)
@@ -207,7 +209,7 @@ void W25Q128::sendCommand(uint8_t cmd)
 
 /**
  * @brief Transfer data to the Flash memory
- * 
+ *
  * @param data the data to transfer
  * @return uint8_t the read data
  */
@@ -218,7 +220,7 @@ uint8_t W25Q128::transfer(uint8_t data)
 
 /**
  * @brief Read the ID of the Flash memory
- * 
+ *
  * @return ChipID the ChipID struct with the manufacturerID, memoryType and capacity
  */
 ChipID W25Q128::readID()
@@ -243,7 +245,7 @@ ChipID W25Q128::readID()
  */
 bool W25Q128::Test_BlockWriteRead(uint8_t startBlock)
 {
-    uint8_t writeBuf[256]; // 256 Byte 
+    uint8_t writeBuf[256]; // 256 Byte
     uint8_t readBuf[256];  // 256 Byte
 
     // Write buffer with test data
