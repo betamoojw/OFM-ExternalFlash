@@ -23,6 +23,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RP2040)
 #include "ext_LittleFS.h"
 #include <hardware/flash.h>
 
@@ -249,19 +250,21 @@ namespace ext_littlefs_impl
     {
         ext_LittleFSImpl *me = reinterpret_cast<ext_LittleFSImpl *>(c->context);
         uint8_t *addr = me->_start + (block * me->_blockSize) + off;
-        if (!__isFreeRTOS)
-        {
-            noInterrupts();
-        }
-        rp2040.idleOtherCore();
-        //    Serial.printf("WRITE: %p, $d\n", (intptr_t)addr - (intptr_t)XIP_BASE, size);
-        flash_range_program((intptr_t)addr - (intptr_t)XIP_BASE, (const uint8_t *)buffer, size);
-        rp2040.resumeOtherCore();
-        if (!__isFreeRTOS)
-        {
-            interrupts();
-        }
-        return 0;
+        #if defined(USING_FREERTOS)
+                // If FreeRTOS is being used, skip disabling interrupts
+        #else
+                noInterrupts();
+        #endif
+                rp2040.idleOtherCore();
+                //    Serial.printf("WRITE: %p, $d\n", (intptr_t)addr - (intptr_t)XIP_BASE, size);
+                flash_range_program((intptr_t)addr - (intptr_t)XIP_BASE, (const uint8_t *)buffer, size);
+                rp2040.resumeOtherCore();
+        #if defined(USING_FREERTOS)
+                // If FreeRTOS is being used, skip enabling interrupts
+        #else
+                interrupts();
+        #endif
+                return 0;
     }
 
     /**
@@ -276,17 +279,19 @@ namespace ext_littlefs_impl
         ext_LittleFSImpl *me = reinterpret_cast<ext_LittleFSImpl *>(c->context);
         uint8_t *addr = me->_start + (block * me->_blockSize);
         //    Serial.printf("ERASE: %p, %d\n", (intptr_t)addr - (intptr_t)XIP_BASE, me->_blockSize);
-        if (!__isFreeRTOS)
-        {
+        #if defined(USING_FREERTOS)
+            // If FreeRTOS is being used, skip disabling interrupts
+        #else
             noInterrupts();
-        }
+        #endif
         rp2040.idleOtherCore();
         flash_range_erase((intptr_t)addr - (intptr_t)XIP_BASE, me->_blockSize);
         rp2040.resumeOtherCore();
-        if (!__isFreeRTOS)
-        {
+        #if defined(USING_FREERTOS)
+            // If FreeRTOS is being used, skip enabling interrupts
+        #else
             interrupts();
-        }
+        #endif
         return 0;
     }
 
@@ -313,3 +318,5 @@ uint32_t ext_FS_end = FLASH_SIZE_W25Q128; // End address of the W25q128 flash me
 // Create the external LittleFS instance with the start and end address of the flash memory
 FS ext_LittleFS = FS(FSImplPtr(new ext_littlefs_impl::ext_LittleFSImpl(&ext_FS_start, ext_FS_end, PAGE_SIZE_W25Q128_256B, SECTOR_SIZE_W25Q128_4KB, 16)));
 #endif
+
+#endif // ARDUINO_ARCH_RP2040

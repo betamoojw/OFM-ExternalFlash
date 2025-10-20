@@ -9,6 +9,7 @@
  * @copyright   Copyright (c) 2024, Erkan Çolak
  *              Licensed under GNU GPL v3.0
  */
+#if defined(ARDUINO_ARCH_RP2040)
 #include "OpenKNX.h"
 #include "W25Q128.h"
 #include "ext_LittleFS.h"
@@ -78,3 +79,5 @@ class ExternalFlash : public OpenKNX::Module
 }; // class ExternalFlash
 
 extern ExternalFlash extFlashModule; // External flash module instance
+
+#endif // ARDUINO_ARCH_RP2040

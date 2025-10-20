@@ -14,7 +14,7 @@
  */
 
 #include "ExternalFlash.h"
-
+#if defined(ARDUINO_ARCH_RP2040)
 ExternalFlash extFlashModule; // External flash module instance
 
 /**
@@ -1003,3 +1003,4 @@ void ExternalFlash::setupExternalConfig() // ToDo EC: Make a configuration wrapp
     _extFlashLfsConfig.disk_version = 0; // default disk version. 0 seems to be the recent version
 #endif
 }
+#endif 

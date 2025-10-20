@@ -8,32 +8,41 @@
  * @copyright   Copyright (c) 2024, Erkan Çolak
  *              Licensed under GNU GPL v3.0
  */
+
+ #if defined(ARDUINO_ARCH_RP2040)
 #include <Arduino.h>
 #include <FS.h>
 #include <OpenKNX.h>
 #include <SPI.h>
-#include "../lib/littlefs/lfs.h"
+#ifdef ARDUINO_ARCH_RP2040
+    #include "../lib/littlefs/lfs.h"
+#elif defined(ARDUINO_ARCH_ESP32)
+    #include <LittleFS.h>
+#else
+    #error "Unsupported platform for W25Q128!"
+#endif
 
 #ifndef OKNXHW_REG2_EXTFLASH_SPI_SCK // SPI Clock pin
-ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_SCK);
+//ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_SCK);
+#define OKNXHW_REG2_EXTFLASH_SPI_SCK = 18; // Default SCK pin for ESP32
 #endif
 #ifndef OKNXHW_REG2_EXTFLASH_SPI_INST // SPI instance (e.g., SPI, SPI1)
-ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_INST);
+#define OKNXHW_REG2_EXTFLASH_SPI_INST = SPI; // Default SPI instance
 #endif
 #ifndef OKNXHW_REG2_EXTFLASH_SPI_MOSI // MOSI pin
-ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_MOSI);
+#define OKNXHW_REG2_EXTFLASH_SPI_MOSI = 23; // Default MOSI pin for ESP32
 #endif
 #ifndef OKNXHW_REG2_EXTFLASH_SPI_MISO // MISO pin
-ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_MISO);
+#define OKNXHW_REG2_EXTFLASH_SPI_MISO = 19; // Default MISO pin for ESP32
 #endif
 #ifndef OKNXHW_REG2_EXTFLASH_SPI_CS // Chip Select (CS) pin
-ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_CS);
+#define OKNXHW_REG2_EXTFLASH_SPI_CS = 5; // Default CS pin for ESP32
 #endif
 #ifndef OKNXHW_REG2_EXTFLASH_SPI_WP // Write Protect (WP) pin
-ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_WP);
+#define OKNXHW_REG2_EXTFLASH_SPI_WP = 4; // Default WP pin for ESP32
 #endif
 #ifndef OKNXHW_REG2_EXTFLASH_SPI_HOLD // Hold pin
-ERROR_REQUIRED_DEFINE(OKNXHW_REG2_EXTFLASH_SPI_HOLD);
+#define OKNXHW_REG2_EXTFLASH_SPI_HOLD = 2; // Default HOLD pin for ESP32
 #endif
 
 // W25Q128 SPecific Commands (could be compatible with other W25Qxx Flash Chips)
@@ -75,6 +84,8 @@ class W25Q128
     int erase(uint32_t addr);
     void chipErase();
 
+#ifdef ARDUINO_ARCH_RP2040
+    // LittleFS Callbacks for RP2040
     inline static int lfs_read(const struct lfs_config *c, lfs_block_t block,
                                lfs_off_t off, void *buffer, lfs_size_t size)
     {
@@ -99,14 +110,16 @@ class W25Q128
     {
         return 0;
     }
+#endif
 
     bool Test_BlockWriteRead(uint8_t startBlock = 0);
     ChipID readID();
+    static W25Q128 *instance;
 
   private:
     void select();
     void deselect();
     void sendCommand(uint8_t cmd);
     uint8_t transfer(uint8_t data);
-    static W25Q128 *instance;
 };
+#endif // ARDUINO_ARCH_RP2040
