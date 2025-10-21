@@ -1,3 +1,4 @@
+#if defined(ARDUINO_ARCH_RP2040)
 #include "W25Q128.h"
 
 W25Q128 *W25Q128::instance = nullptr;
@@ -263,3 +264,4 @@ bool W25Q128::Test_BlockWriteRead(uint8_t startBlock)
     // Compare
     return memcmp(writeBuf, readBuf, sizeof(writeBuf)) == 0;
 }
+#endif // ARDUINO_ARCH_RP2040

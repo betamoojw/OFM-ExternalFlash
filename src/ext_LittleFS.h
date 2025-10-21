@@ -23,6 +23,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RP2040)
 #pragma once
 #include "LittleFS.h"
 #include "W25Q128.h"
@@ -1229,3 +1230,4 @@ extern uint8_t ext_FS_start;
 extern uint32_t ext_FS_end;
 using ext_littlefs_impl::ext_LittleFSConfig;
 #endif // ARDUINO
+#endif 
