@@ -22,7 +22,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
+#ifdef EXTERNAL_FLASH_MODULE
 #if defined(ARDUINO_ARCH_RP2040)
 #pragma once
 #include "LittleFS.h"
@@ -1231,3 +1231,5 @@ extern uint32_t ext_FS_end;
 using ext_littlefs_impl::ext_LittleFSConfig;
 #endif // ARDUINO
 #endif 
+
+#endif

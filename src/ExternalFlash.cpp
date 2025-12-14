@@ -1,3 +1,4 @@
+#ifdef EXTERNAL_FLASH_MODULE
 /**
  * @class ExternalFlash
  * @brief Interface for managing external flash memory in the OpenKNX ecosystem.
@@ -1003,4 +1004,5 @@ void ExternalFlash::setupExternalConfig() // ToDo EC: Make a configuration wrapp
     _extFlashLfsConfig.disk_version = 0; // default disk version. 0 seems to be the recent version
 #endif
 }
-#endif 
+#endif //
+#endif // #ifdef EXTERNAL_FLASH_MODULE
