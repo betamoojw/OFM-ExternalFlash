@@ -1,3 +1,4 @@
+#ifdef EXTERNAL_FLASH_MODULE
 #if defined(ARDUINO_ARCH_RP2040)
 #include "W25Q128.h"
 
@@ -265,3 +266,4 @@ bool W25Q128::Test_BlockWriteRead(uint8_t startBlock)
     return memcmp(writeBuf, readBuf, sizeof(writeBuf)) == 0;
 }
 #endif // ARDUINO_ARCH_RP2040
+#endif // EXTERNAL_FLASH_MODULE

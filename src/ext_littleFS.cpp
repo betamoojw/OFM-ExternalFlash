@@ -23,6 +23,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#ifdef EXTERNAL_FLASH_MODULE
 #if defined(ARDUINO_ARCH_RP2040)
 #include "ext_LittleFS.h"
 #include <hardware/flash.h>
@@ -320,3 +321,4 @@ FS ext_LittleFS = FS(FSImplPtr(new ext_littlefs_impl::ext_LittleFSImpl(&ext_FS_s
 #endif
 
 #endif // ARDUINO_ARCH_RP2040
+#endif // EXTERNAL_FLASH_MODULE

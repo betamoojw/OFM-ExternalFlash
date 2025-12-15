@@ -1,3 +1,4 @@
+#ifdef EXTERNAL_FLASH_MODULE
 #pragma once
 /**
  * @file        ExternalFlash.h
@@ -81,3 +82,4 @@ class ExternalFlash : public OpenKNX::Module
 extern ExternalFlash extFlashModule; // External flash module instance
 
 #endif // ARDUINO_ARCH_RP2040
+#endif // EXTERNAL_FLASH_MODULE
